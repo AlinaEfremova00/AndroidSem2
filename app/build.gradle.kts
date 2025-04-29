@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace = "ru.itis.first"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "ru.itis.first"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -59,7 +59,7 @@ dependencies {
     // okhttp
     implementation (libs.okhttp)
     implementation (libs.okhttp3.okhttp)
-    implementation (libs.logging.interceptor)
+    implementation (libs.okhttp3.logging.interceptor)
 
     // coroutines
     implementation (libs.kotlinx.coroutines.android)
