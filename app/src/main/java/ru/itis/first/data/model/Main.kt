@@ -1,4 +1,4 @@
-package ru.itis.first.data
+package ru.itis.first.data.model
 
 data class Main(
     val feels_like: Double,

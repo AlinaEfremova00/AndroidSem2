@@ -2,6 +2,7 @@ package ru.itis.first.data
 
 import retrofit2.http.GET
 import retrofit2.http.Query
+import ru.itis.first.data.model.WeatherResponse
 
 interface WeatherApi {
     @GET("data/2.5/weather")

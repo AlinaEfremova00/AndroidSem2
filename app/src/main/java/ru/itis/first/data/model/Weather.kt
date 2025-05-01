@@ -1,4 +1,4 @@
-package ru.itis.first.data
+package ru.itis.first.data.model
 
 data class Weather(
     val description: String,

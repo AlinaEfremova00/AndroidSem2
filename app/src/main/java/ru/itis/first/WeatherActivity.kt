@@ -2,26 +2,28 @@ package ru.itis.first
 
 import android.annotation.SuppressLint
 import android.os.Bundle
-import android.os.Parcel
-import android.os.Parcelable
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import ru.itis.first.data.RetrofitClient
-import ru.itis.first.data.WeatherResponse
+import ru.itis.first.data.model.WeatherResponse
 import ru.itis.first.databinding.ActivityWeatherBinding
-import java.util.Locale
+import androidx.activity.viewModels
+import ru.itis.first.ui.weather.WeatherUiState
+import ru.itis.first.ui.weather.WeatherViewModel
 
-class WeatherActivity() : AppCompatActivity(), Parcelable {
+
+class WeatherActivity : AppCompatActivity() {
     private lateinit var binding: ActivityWeatherBinding
+    private val viewModel: WeatherViewModel by viewModels()
 
-    constructor(parcel: Parcel) : this() {
 
+    private fun finishWithError(message: String): Nothing {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+        finish()
+        throw IllegalStateException(message)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -29,66 +31,27 @@ class WeatherActivity() : AppCompatActivity(), Parcelable {
         binding = ActivityWeatherBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val city = intent.getStringExtra("CITY") ?: run {
-            Toast.makeText(this, "Город не указан", Toast.LENGTH_SHORT).show()
-            finish()
-            return
-        }
+        val city = intent.getStringExtra("CITY") ?: return finishWithError("Город не указан")
+
+        viewModel.loadWeather(city)
 
         lifecycleScope.launch {
-            binding.progressBar.visibility = View.VISIBLE
-            try {
-                val response = withContext(Dispatchers.IO) {
-                    RetrofitClient.instance.getWeather(city)
-                }
+            viewModel.state.collect { state ->
+                when (state) {
+                    is WeatherUiState.Loading -> binding.progressBar.visibility = View.VISIBLE
 
-                if (response.isSuccessful && response.body() != null) {
-                    val weatherData = response.body()!!
-                    updateUI(weatherData)
-                } else {
-                    when (response.code()) {
-                        404 -> Toast.makeText(
-                            this@WeatherActivity,
-                            "Город не найден",
-                            Toast.LENGTH_SHORT
-                        ).show()
-
-                        else -> Toast.makeText(
-                            this@WeatherActivity,
-                            "Ошибка сервера: ${response.code()}",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                    is WeatherUiState.Success -> {
+                        binding.progressBar.visibility = View.GONE
+                        updateUI(state.data)
                     }
-                    finish()
+
+                    is WeatherUiState.Error -> {
+                        binding.progressBar.visibility = View.GONE
+                        Toast.makeText(this@WeatherActivity, state.message, Toast.LENGTH_SHORT).show()
+                        finish()
+                    }
                 }
-            } catch (e: Exception) {
-                Toast.makeText(
-                    this@WeatherActivity,
-                    "Ошибка сети: ${e.message}",
-                    Toast.LENGTH_SHORT
-                ).show()
-                finish()
-            } finally {
-                binding.progressBar.visibility = View.GONE
             }
-        }
-    }
-
-    override fun writeToParcel(parcel: Parcel, flags: Int) {
-
-    }
-
-    override fun describeContents(): Int {
-        return 0
-    }
-
-    companion object CREATOR : Parcelable.Creator<WeatherActivity> {
-        override fun createFromParcel(parcel: Parcel): WeatherActivity {
-            return WeatherActivity(parcel)
-        }
-
-        override fun newArray(size: Int): Array<WeatherActivity?> {
-            return arrayOfNulls(size)
         }
     }
 
